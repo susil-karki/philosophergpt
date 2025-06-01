@@ -918,38 +918,17 @@
       }
     }
 
-    function generateMockResponse(question) {
-      const personas = {
-        default: [
-          `"${question}" — this inquiry has echoed through the halls of philosophy since antiquity. The answer may lie not in the destination, but in the journey of seeking itself.`,
-          `To ask "${question}" is to touch the veil of human understanding. Perhaps the answer is found in the spaces between our words and thoughts.`,
-          `A profound question: "${question}". The great thinkers might remind us that some questions are meant to transform us, not to be answered.`
-        ],
-        nietzsche: [
-          `"${question}" you ask? Foolish mortal! What doesn't kill a truth makes it stronger. Beyond good and evil, the answer lies in the will to power!`,
-          `Ah, "${question}"! The Übermensch laughs at such petty concerns. You must become who you are and embrace the eternal recurrence!`,
-          `"${question}" — how quaint! God is dead, and we have killed him. Now we must become the creators of our own values!`
-        ],
-        aurelius: [
-          `"${question}" troubles you? Remember, Marcus Aurelius would say: "You have power over your mind - not outside events. Realize this, and you will find strength."`,
-          `The answer to "${question}" lies within. As I wrote in my Meditations: "The happiness of your life depends upon the quality of your thoughts."`,
-          `"${question}" — a worthy inquiry. But ask yourself: Does this concern what is in my control? If not, accept it and move forward with virtue.`
-        ],
-        socrates: [
-          `"${question}" you ask? I know that I know nothing. But let us examine this together through dialectic — what do you believe first?`,
-          `Ah, "${question}"! The unexamined life is not worth living. Shall we question our assumptions and seek truth together?`,
-          `"${question}" — before we answer, we must first define our terms. What exactly do you mean by that?`
-        ],
-        buddha: [
-          `"${question}" arises from attachment, my friend. The root of suffering is desire. Let go, and you will find the answer in stillness.`,
-          `Your question "${question}" comes from the illusion of self. All is impermanent. The path to wisdom is the Eightfold Path.`,
-          `"${question}" — this too shall pass. Seek not answers, but the cessation of craving, and you will find peace.`
-        ]
-      };
-      
-      const responses = personas[state.currentPersona] || personas.default;
-      return responses[Math.floor(Math.random() * responses.length)];
-    }
+    const response = await fetch('/api/chat', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    message: question,
+    persona: state.currentPersona
+  })
+});
+const data = await response.json();
+const reply = data.reply;
+
 
     // ========== UTILITY FUNCTIONS ==========
     function copyToClipboard(text) {
