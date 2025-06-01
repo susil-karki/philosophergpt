@@ -1,0 +1,986 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PhilosopherGPT | Wisdom Engine</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
+  <style>
+    :root {
+      --bg: #f8f9fa;
+      --text: #212529;
+      --primary: #6c5ce7;
+      --primary-dark: #5649c0;
+      --input: #ffffff;
+      --shadow: 0 12px 32px rgba(0, 0, 0, 0.08);
+      --border: #e9ecef;
+      --radius: 12px;
+      --sidebar-width: 300px;
+    }
+
+    [data-theme="dark"] {
+      --bg: #121212;
+      --text: #f8f9fa;
+      --primary: #a78bfa;
+      --primary-dark: #8c6bf7;
+      --input: #1e1e1e;
+      --shadow: 0 12px 32px rgba(0, 0, 0, 0.3);
+      --border: #333;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      transition: background 0.3s ease, color 0.15s ease, border 0.3s ease;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+
+    /* Sidebar (Memory & History) */
+    .sidebar {
+      width: var(--sidebar-width);
+      background: var(--input);
+      border-right: 1px solid var(--border);
+      height: 100vh;
+      position: fixed;
+      top: 0;
+      left: calc(-1 * var(--sidebar-width));
+      transition: left 0.3s ease;
+      padding: 1.5rem;
+      overflow-y: auto;
+      z-index: 100;
+    }
+
+    .sidebar.open {
+      left: 0;
+    }
+
+    .sidebar-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.5rem;
+    }
+
+    .sidebar h2 {
+      font-size: 1.2rem;
+      margin-bottom: 1rem;
+    }
+
+    .memory-content, .history-list {
+      margin-bottom: 2rem;
+    }
+
+    .history-item {
+      padding: 0.75rem;
+      border-radius: var(--radius);
+      margin-bottom: 0.5rem;
+      cursor: pointer;
+      background: var(--bg);
+      transition: all 0.2s ease;
+    }
+
+    .history-item:hover {
+      background: var(--primary);
+      color: white;
+    }
+
+    .close-sidebar {
+      background: none;
+      border: none;
+      color: var(--text);
+      font-size: 1.5rem;
+      cursor: pointer;
+    }
+
+    /* Main Content */
+    .container {
+      width: 100%;
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 2rem;
+      transition: margin-left 0.3s ease;
+    }
+
+    .container.sidebar-open {
+      margin-left: var(--sidebar-width);
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 2rem;
+      position: relative;
+    }
+
+    h1 {
+      font-size: 2.8rem;
+      font-weight: 700;
+      background: linear-gradient(45deg, var(--primary), #8e44ad);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      margin-bottom: 0.5rem;
+      animation: fadeInDown 0.8s;
+    }
+
+    .tagline {
+      font-size: 1.1rem;
+      opacity: 0.8;
+      margin-bottom: 1.5rem;
+      animation: fadeIn 1s 0.3s both;
+    }
+
+    /* Persona Selector */
+    .persona-selector {
+      margin-bottom: 1.5rem;
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .persona-btn {
+      padding: 0.5rem 1rem;
+      border-radius: 100px;
+      background: var(--input);
+      border: 1px solid var(--border);
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-size: 0.85rem;
+    }
+
+    .persona-btn.active {
+      background: var(--primary);
+      color: white;
+      border-color: var(--primary);
+    }
+
+    /* Input Area */
+    .input-area {
+      display: flex;
+      gap: 0.75rem;
+      margin-bottom: 1.5rem;
+      width: 100%;
+      position: relative;
+    }
+
+    #query {
+      flex: 1;
+      padding: 1rem 1.25rem;
+      font-size: 1rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--input);
+      color: var(--text);
+      box-shadow: var(--shadow);
+      transition: all 0.3s ease;
+    }
+
+    #query:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(108, 92, 231, 0.2);
+    }
+
+    #ask-button {
+      padding: 1rem 1.75rem;
+      font-size: 1rem;
+      font-weight: 600;
+      border: none;
+      border-radius: var(--radius);
+      background: var(--primary);
+      color: white;
+      cursor: pointer;
+      box-shadow: 0 4px 16px rgba(108, 92, 231, 0.3);
+      transition: all 0.2s ease;
+    }
+
+    #ask-button:hover {
+      background: var(--primary-dark);
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(108, 92, 231, 0.4);
+    }
+
+    #ask-button:active {
+      transform: translateY(0);
+    }
+
+    /* Controls */
+    .controls {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 1rem;
+    }
+
+    .control-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--text);
+      opacity: 0.7;
+      transition: all 0.2s ease;
+      font-size: 1.1rem;
+      padding: 0.5rem;
+    }
+
+    .control-btn:hover {
+      opacity: 1;
+      transform: scale(1.1);
+    }
+
+    /* Result & Chat */
+    .result-container {
+      position: relative;
+      margin-top: 1.5rem;
+    }
+
+    .chat-history {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    .message {
+      background: var(--input);
+      border-radius: var(--radius);
+      padding: 1.5rem;
+      box-shadow: var(--shadow);
+      opacity: 0;
+      transform: translateY(20px);
+      transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .message.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .message-user {
+      align-self: flex-end;
+      background: var(--primary);
+      color: white;
+    }
+
+    .message-bot {
+      align-self: flex-start;
+    }
+
+    .message-content {
+      line-height: 1.7;
+      font-size: 1.1rem;
+    }
+
+    .message-meta {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 1rem;
+      font-size: 0.8rem;
+      opacity: 0.7;
+    }
+
+    .message-actions {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .action-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: inherit;
+      opacity: 0.7;
+      transition: all 0.2s ease;
+    }
+
+    .action-btn:hover {
+      opacity: 1;
+      transform: scale(1.1);
+    }
+
+    .action-btn.liked {
+      color: #00b894;
+    }
+
+    .action-btn.disliked {
+      color: #d63031;
+    }
+
+    /* Loading State */
+    .loading {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.75rem;
+      font-style: italic;
+      color: var(--text);
+      opacity: 0.7;
+    }
+
+    .loading-dots {
+      display: inline-flex;
+      gap: 0.25rem;
+    }
+
+    .loading-dots span {
+      width: 8px;
+      height: 8px;
+      background: var(--primary);
+      border-radius: 50%;
+      display: inline-block;
+      animation: bounce 1.4s infinite ease-in-out;
+    }
+
+    .loading-dots span:nth-child(1) { animation-delay: -0.32s; }
+    .loading-dots span:nth-child(2) { animation-delay: -0.16s; }
+
+    @keyframes bounce {
+      0%, 80%, 100% { transform: translateY(0); }
+      40% { transform: translateY(-10px); }
+    }
+
+    /* Footer */
+    footer {
+      margin-top: 3rem;
+      text-align: center;
+      font-size: 0.9rem;
+      opacity: 0.6;
+      animation: fadeIn 1s 1s both;
+    }
+
+    .philosopher-quote {
+      font-style: italic;
+      margin-top: 0.5rem;
+    }
+
+    /* Snackbar/Toast */
+    .snackbar {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--primary);
+      color: white;
+      padding: 0.75rem 1.5rem;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      z-index: 1000;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .snackbar.show {
+      opacity: 1;
+    }
+
+    /* Voice Input */
+    .voice-btn {
+      position: absolute;
+      right: 110px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      color: var(--text);
+      opacity: 0.6;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .voice-btn:hover {
+      opacity: 1;
+    }
+
+    .voice-btn.listening {
+      color: #d63031;
+      animation: pulse 1.5s infinite;
+    }
+
+    @keyframes pulse {
+      0% { transform: translateY(-50%) scale(1); }
+      50% { transform: translateY(-50%) scale(1.1); }
+      100% { transform: translateY(-50%) scale(1); }
+    }
+
+    /* Toggle Sidebar Button */
+    .toggle-sidebar {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      background: var(--primary);
+      color: white;
+      border: none;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      z-index: 99;
+      box-shadow: var(--shadow);
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .container {
+        padding: 1rem;
+      }
+
+      h1 {
+        font-size: 2.2rem;
+      }
+
+      .sidebar {
+        width: 85%;
+        left: -85%;
+      }
+
+      .container.sidebar-open {
+        margin-left: 85%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Sidebar (Memory & History) -->
+  <div class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <h2>Memory & History</h2>
+      <button class="close-sidebar" onclick="toggleSidebar()">×</button>
+    </div>
+    
+    <div class="memory-content">
+      <h3>Current Context</h3>
+      <div id="memory-display">No context yet. Ask something to build memory.</div>
+    </div>
+    
+    <div class="history-list">
+      <h3>Past Conversations</h3>
+      <div id="history-items"></div>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="container" id="main-container">
+    <button class="toggle-sidebar" onclick="toggleSidebar()">☰</button>
+    
+    <header>
+      <h1 class="animate__animated animate__fadeInDown">PhilosopherGPT</h1>
+      <p class="tagline">Wisdom distilled through the ages</p>
+      
+      <!-- Persona Selector -->
+      <div class="persona-selector">
+        <button class="persona-btn" data-persona="default">Default</button>
+        <button class="persona-btn" data-persona="nietzsche">Nietzsche</button>
+        <button class="persona-btn" data-persona="aurelius">Marcus Aurelius</button>
+        <button class="persona-btn" data-persona="socrates">Socrates</button>
+        <button class="persona-btn" data-persona="buddha">Buddha</button>
+      </div>
+    </header>
+
+    <div class="input-area">
+      <input 
+        id="query" 
+        type="text" 
+        placeholder="Ponder a question..." 
+        autocomplete="off"
+        aria-label="Ask a philosophical question"
+      >
+      <button class="voice-btn" id="voice-btn" title="Voice Input">🎤</button>
+      <button id="ask-button" onclick="askGPT()">
+        Seek Wisdom
+      </button>
+    </div>
+
+    <div class="controls">
+      <button class="control-btn" onclick="toggleTheme()" aria-label="Toggle theme">
+        🌓
+      </button>
+      <button class="control-btn" onclick="clearHistory()" aria-label="Clear history">
+        🗑️
+      </button>
+    </div>
+
+    <div class="result-container">
+      <div class="chat-history" id="chat-history"></div>
+    </div>
+  </div>
+
+  <footer>
+    <div>Wisdom is not the absence of questions, but the embrace of mystery.</div>
+    <div class="philosopher-quote">"The only true wisdom is in knowing you know nothing." — Socrates</div>
+  </footer>
+
+  <!-- Snackbar -->
+  <div class="snackbar" id="snackbar"></div>
+
+  <script>
+    // ========== STATE MANAGEMENT ==========
+    const state = {
+      currentPersona: 'default',
+      memory: [],
+      chatHistory: [],
+      isListening: false
+    };
+
+    // ========== DOM ELEMENTS ==========
+    const elements = {
+      queryInput: document.getElementById("query"),
+      askButton: document.getElementById("ask-button"),
+      resultBox: document.getElementById("chat-history"),
+      sidebar: document.getElementById("sidebar"),
+      mainContainer: document.getElementById("main-container"),
+      memoryDisplay: document.getElementById("memory-display"),
+      historyItems: document.getElementById("history-items"),
+      voiceBtn: document.getElementById("voice-btn"),
+      snackbar: document.getElementById("snackbar")
+    };
+
+    // ========== INITIALIZATION ==========
+    function init() {
+      loadTheme();
+      loadHistory();
+      setupEventListeners();
+      elements.queryInput.focus();
+    }
+
+    // ========== THEME MANAGEMENT ==========
+    function loadTheme() {
+      const savedTheme = localStorage.getItem("philosopher-theme") || "light";
+      document.documentElement.setAttribute("data-theme", savedTheme);
+    }
+
+    function toggleTheme() {
+      const currentTheme = document.documentElement.getAttribute("data-theme");
+      const newTheme = currentTheme === "dark" ? "light" : "dark";
+      document.documentElement.setAttribute("data-theme", newTheme);
+      localStorage.setItem("philosopher-theme", newTheme);
+      showSnackbar(`Theme set to ${newTheme} mode`);
+      
+      document.body.classList.add("animate__animated", "animate__fadeIn");
+      setTimeout(() => {
+        document.body.classList.remove("animate__animated", "animate__fadeIn");
+      }, 500);
+    }
+
+    // ========== SIDEBAR TOGGLE ==========
+    function toggleSidebar() {
+      elements.sidebar.classList.toggle("open");
+      elements.mainContainer.classList.toggle("sidebar-open");
+    }
+
+    // ========== PERSONA SELECTION ==========
+    document.querySelectorAll('.persona-btn').forEach(btn => {
+      btn.addEventListener('click', function() {
+        // Remove active class from all buttons
+        document.querySelectorAll('.persona-btn').forEach(b => b.classList.remove('active'));
+        
+        // Add active class to clicked button
+        this.classList.add('active');
+        
+        // Set current persona
+        state.currentPersona = this.dataset.persona;
+        showSnackbar(`Persona set to ${this.textContent}`);
+        
+        // Update memory display
+        updateMemoryDisplay();
+      });
+    });
+
+    // Set default persona as active initially
+    document.querySelector('.persona-btn[data-persona="default"]').classList.add('active');
+
+    // ========== MEMORY MANAGEMENT ==========
+    function updateMemory() {
+      // Keep last 3 messages as context
+      state.memory = state.chatHistory.slice(-3);
+      localStorage.setItem('philosopher-memory', JSON.stringify(state.memory));
+      updateMemoryDisplay();
+    }
+
+    function updateMemoryDisplay() {
+      if (state.memory.length === 0) {
+        elements.memoryDisplay.textContent = "No context yet. Ask something to build memory.";
+        return;
+      }
+      
+      let memoryHTML = '';
+      state.memory.forEach(msg => {
+        memoryHTML += `
+          <div style="margin-bottom: 0.5rem;">
+            <strong>${msg.role === 'user' ? 'You' : state.currentPersona.charAt(0).toUpperCase() + state.currentPersona.slice(1)}:</strong>
+            <div style="opacity: 0.8;">${msg.content.substring(0, 60)}${msg.content.length > 60 ? '...' : ''}</div>
+          </div>
+        `;
+      });
+      
+      elements.memoryDisplay.innerHTML = memoryHTML;
+    }
+
+    // ========== CHAT HISTORY MANAGEMENT ==========
+    function loadHistory() {
+      const savedHistory = localStorage.getItem('philosopher-chat-history');
+      if (savedHistory) {
+        state.chatHistory = JSON.parse(savedHistory);
+        renderChatHistory();
+        updateHistoryList();
+      }
+    }
+
+    function saveHistory() {
+      localStorage.setItem('philosopher-chat-history', JSON.stringify(state.chatHistory));
+      updateHistoryList();
+    }
+
+    function clearHistory() {
+      state.chatHistory = [];
+      state.memory = [];
+      saveHistory();
+      renderChatHistory();
+      updateMemoryDisplay();
+      showSnackbar('History cleared');
+    }
+
+    function updateHistoryList() {
+      if (state.chatHistory.length === 0) {
+        elements.historyItems.innerHTML = '<div style="opacity: 0.7;">No conversations yet</div>';
+        return;
+      }
+      
+      // Group by date
+      const grouped = {};
+      state.chatHistory.forEach((msg, index) => {
+        if (msg.role === 'user') {
+          const date = new Date(msg.timestamp).toLocaleDateString();
+          if (!grouped[date]) grouped[date] = [];
+          grouped[date].push(msg);
+        }
+      });
+      
+      let historyHTML = '';
+      for (const date in grouped) {
+        historyHTML += `<h4 style="margin: 1rem 0 0.5rem;">${date}</h4>`;
+        grouped[date].forEach(msg => {
+          historyHTML += `
+            <div class="history-item" onclick="loadConversation(${msg.conversationId})">
+              ${msg.content.substring(0, 50)}${msg.content.length > 50 ? '...' : ''}
+            </div>
+          `;
+        });
+      }
+      
+      elements.historyItems.innerHTML = historyHTML;
+    }
+
+    function loadConversation(conversationId) {
+      // Filter messages by conversationId
+      const conversation = state.chatHistory.filter(msg => msg.conversationId === conversationId);
+      // Render them (implementation depends on your data structure)
+      showSnackbar('Conversation loaded');
+      toggleSidebar();
+    }
+
+    // ========== CHAT RENDERING ==========
+    function renderChatHistory() {
+      elements.resultBox.innerHTML = '';
+      
+      state.chatHistory.forEach(msg => {
+        addMessageToChat(msg.role, msg.content, msg.timestamp, msg.liked);
+      });
+      
+      // Scroll to bottom
+      setTimeout(() => {
+        elements.resultBox.scrollTop = elements.resultBox.scrollHeight;
+      }, 100);
+    }
+
+    function addMessageToChat(role, content, timestamp, liked = null) {
+      const messageDiv = document.createElement('div');
+      messageDiv.className = `message ${role === 'user' ? 'message-user' : 'message-bot'}`;
+      
+      const date = new Date(timestamp);
+      const timeString = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      
+      messageDiv.innerHTML = `
+        <div class="message-content">${content}</div>
+        <div class="message-meta">
+          <span>${timeString}</span>
+          ${role === 'assistant' ? `
+            <div class="message-actions">
+              <button class="action-btn like-btn ${liked === true ? 'liked' : ''}" onclick="rateResponse(this, true, ${timestamp})">👍</button>
+              <button class="action-btn dislike-btn ${liked === false ? 'disliked' : ''}" onclick="rateResponse(this, false, ${timestamp})">👎</button>
+              <button class="action-btn" onclick="copyToClipboard('${content.replace(/'/g, "\\'")}')">📋</button>
+            </div>
+          ` : ''}
+        </div>
+      `;
+      
+      elements.resultBox.appendChild(messageDiv);
+      
+      // Animate in
+      setTimeout(() => {
+        messageDiv.classList.add('show');
+      }, 50);
+    }
+
+    // ========== RESPONSE RATING ==========
+    function rateResponse(button, isLike, timestamp) {
+      // Find the message in chatHistory
+      const messageIndex = state.chatHistory.findIndex(msg => 
+        msg.role === 'assistant' && msg.timestamp === timestamp
+      );
+      
+      if (messageIndex !== -1) {
+        state.chatHistory[messageIndex].liked = isLike;
+        saveHistory();
+        
+        if (isLike) {
+          button.classList.add('liked');
+          button.nextElementSibling.classList.remove('disliked');
+          showSnackbar('Response liked 👍');
+        } else {
+          button.classList.add('disliked');
+          button.previousElementSibling.classList.remove('liked');
+          showSnackbar('Response disliked 👎');
+        }
+      }
+    }
+
+    // ========== VOICE INPUT ==========
+    function setupVoiceInput() {
+      elements.voiceBtn.addEventListener('click', toggleVoiceInput);
+    }
+
+    function toggleVoiceInput() {
+      if (!('webkitSpeechRecognition' in window)) {
+        showSnackbar('Voice input not supported in your browser');
+        return;
+      }
+      
+      if (state.isListening) {
+        stopVoiceInput();
+      } else {
+        startVoiceInput();
+      }
+    }
+
+    function startVoiceInput() {
+      const recognition = new webkitSpeechRecognition();
+      recognition.continuous = false;
+      recognition.interimResults = false;
+      
+      recognition.onstart = function() {
+        state.isListening = true;
+        elements.voiceBtn.classList.add('listening');
+        showSnackbar('Listening... Speak now');
+      };
+      
+      recognition.onresult = function(event) {
+        const transcript = event.results[0][0].transcript;
+        elements.queryInput.value = transcript;
+        state.isListening = false;
+        elements.voiceBtn.classList.remove('listening');
+      };
+      
+      recognition.onerror = function(event) {
+        state.isListening = false;
+        elements.voiceBtn.classList.remove('listening');
+        showSnackbar('Voice input error: ' + event.error);
+      };
+      
+      recognition.onend = function() {
+        if (state.isListening) {
+          // If still listening, restart (happens after short silence)
+          recognition.start();
+        }
+      };
+      
+      recognition.start();
+    }
+
+    function stopVoiceInput() {
+      state.isListening = false;
+      elements.voiceBtn.classList.remove('listening');
+      showSnackbar('Voice input stopped');
+    }
+
+    // ========== API CALL & RESPONSE HANDLING ==========
+    async function askGPT() {
+      const question = elements.queryInput.value.trim();
+      if (!question) {
+        showSnackbar('Please ask a question');
+        return;
+      }
+      
+      // Disable button during request
+      elements.askButton.disabled = true;
+      elements.askButton.textContent = "Reflecting...";
+      
+      // Add user message to chat
+      const userMessage = {
+        role: 'user',
+        content: question,
+        timestamp: Date.now(),
+        conversationId: Date.now() // Simple way to group messages
+      };
+      
+      state.chatHistory.push(userMessage);
+      addMessageToChat('user', question, userMessage.timestamp);
+      
+      // Show loading indicator
+      const loadingDiv = document.createElement('div');
+      loadingDiv.className = 'message message-bot';
+      loadingDiv.innerHTML = `
+        <div class="loading">
+          <span>${getPersonaResponsePrefix()} is thinking</span>
+          <div class="loading-dots">
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
+        </div>
+      `;
+      elements.resultBox.appendChild(loadingDiv);
+      
+      // Scroll to bottom
+      elements.resultBox.scrollTop = elements.resultBox.scrollHeight;
+      
+      try {
+        // In a real app, you would call your API here
+        // const response = await fetchPhilosopherResponse(question);
+        
+        // For demo purposes, we'll use a mock response
+        await new Promise(resolve => setTimeout(resolve, 1500 + Math.random() * 1000));
+        const response = generateMockResponse(question);
+        
+        // Remove loading indicator
+        elements.resultBox.removeChild(loadingDiv);
+        
+        // Add bot response to chat
+        const botMessage = {
+          role: 'assistant',
+          content: response,
+          timestamp: Date.now(),
+          conversationId: userMessage.conversationId
+        };
+        
+        state.chatHistory.push(botMessage);
+        addMessageToChat('assistant', response, botMessage.timestamp);
+        
+        // Update memory and save
+        updateMemory();
+        saveHistory();
+        
+      } catch (error) {
+        console.error("Error:", error);
+        showSnackbar('Failed to get response. Please try again.');
+        
+        // Remove loading indicator
+        if (loadingDiv.parentNode) {
+          elements.resultBox.removeChild(loadingDiv);
+        }
+        
+        // Add error message
+        const errorMessage = {
+          role: 'assistant',
+          content: "The oracle appears to be meditating. Try again when the winds of wisdom are more favorable.",
+          timestamp: Date.now(),
+          conversationId: userMessage.conversationId
+        };
+        
+        state.chatHistory.push(errorMessage);
+        addMessageToChat('assistant', errorMessage.content, errorMessage.timestamp);
+      } finally {
+        elements.askButton.disabled = false;
+        elements.askButton.textContent = "Seek Wisdom";
+        elements.queryInput.value = '';
+        elements.queryInput.focus();
+      }
+    }
+
+    function getPersonaResponsePrefix() {
+      switch(state.currentPersona) {
+        case 'nietzsche': return 'Nietzsche';
+        case 'aurelius': return 'Marcus Aurelius';
+        case 'socrates': return 'Socrates';
+        case 'buddha': return 'The Buddha';
+        default: return 'The Philosopher';
+      }
+    }
+
+    function generateMockResponse(question) {
+      const personas = {
+        default: [
+          `"${question}" — this inquiry has echoed through the halls of philosophy since antiquity. The answer may lie not in the destination, but in the journey of seeking itself.`,
+          `To ask "${question}" is to touch the veil of human understanding. Perhaps the answer is found in the spaces between our words and thoughts.`,
+          `A profound question: "${question}". The great thinkers might remind us that some questions are meant to transform us, not to be answered.`
+        ],
+        nietzsche: [
+          `"${question}" you ask? Foolish mortal! What doesn't kill a truth makes it stronger. Beyond good and evil, the answer lies in the will to power!`,
+          `Ah, "${question}"! The Übermensch laughs at such petty concerns. You must become who you are and embrace the eternal recurrence!`,
+          `"${question}" — how quaint! God is dead, and we have killed him. Now we must become the creators of our own values!`
+        ],
+        aurelius: [
+          `"${question}" troubles you? Remember, Marcus Aurelius would say: "You have power over your mind - not outside events. Realize this, and you will find strength."`,
+          `The answer to "${question}" lies within. As I wrote in my Meditations: "The happiness of your life depends upon the quality of your thoughts."`,
+          `"${question}" — a worthy inquiry. But ask yourself: Does this concern what is in my control? If not, accept it and move forward with virtue.`
+        ],
+        socrates: [
+          `"${question}" you ask? I know that I know nothing. But let us examine this together through dialectic — what do you believe first?`,
+          `Ah, "${question}"! The unexamined life is not worth living. Shall we question our assumptions and seek truth together?`,
+          `"${question}" — before we answer, we must first define our terms. What exactly do you mean by that?`
+        ],
+        buddha: [
+          `"${question}" arises from attachment, my friend. The root of suffering is desire. Let go, and you will find the answer in stillness.`,
+          `Your question "${question}" comes from the illusion of self. All is impermanent. The path to wisdom is the Eightfold Path.`,
+          `"${question}" — this too shall pass. Seek not answers, but the cessation of craving, and you will find peace.`
+        ]
+      };
+      
+      const responses = personas[state.currentPersona] || personas.default;
+      return responses[Math.floor(Math.random() * responses.length)];
+    }
+
+    // ========== UTILITY FUNCTIONS ==========
+    function copyToClipboard(text) {
+      navigator.clipboard.writeText(text).then(() => {
+        showSnackbar('Copied to clipboard!');
+      }).catch(err => {
+        showSnackbar('Failed to copy');
+      });
+    }
+
+    function showSnackbar(message, duration = 3000) {
+      elements.snackbar.textContent = message;
+      elements.snackbar.classList.add('show');
+      
+      setTimeout(() => {
+        elements.snackbar.classList.remove('show');
+      }, duration);
+    }
+
+    function setupEventListeners() {
+      // Enter key to submit
+      elements.queryInput.addEventListener("keypress", (e) => {
+        if (e.key === "Enter") askGPT();
+      });
+      
+      // Voice input setup
+      setupVoiceInput();
+    }
+
+    // Initialize the app
+    window.addEventListener('DOMContentLoaded', init);
+  </script>
+</body>
+</html>
